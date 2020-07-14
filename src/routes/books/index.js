@@ -35,9 +35,43 @@ router.post("/import", async (req, res) => {
 })
 
 router.get("/", async(req, res)=>{
+    // getting values from Query String ?offset=10 etc
+    // OR setting a default value
+    const order = req.query.order || "asc"
+    const offset = req.query.offset || 0
+    const limit = req.query.limit || 10
+
+    // removing them from Query since otherwise I'll automatically filter on them
+    delete req.query.order
+    delete req.query.offset
+    delete req.query.limit
+
+    let query = 'SELECT * FROM "Books" ' //create my query
+
+    const params = []
+    for (queryParam in req.query) { //for each value in query string, I'll filter
+        params.push(req.query[queryParam])
+
+        if (params.length === 1) // for the first, I'll add the where clause
+            query += `WHERE ${queryParam} = $${params.length} `
+        else // the all the rest, it'll start with AND
+            query += ` AND ${queryParam} = $${params.length} `
+    }
+
+    query += " ORDER BY Title " + order  //adding the sorting 
+
+    params.push (limit)
+    query += ` LIMIT $${params.length} `
+    params.push(offset)
+    query += ` OFFSET $${params.length}`
+    // query += ` LIMIT $${params.length+1} OFFSET $${params.length+2}` //adding the pagination
+    // params.push(limit)
+    // params.push(offset) 
+    console.log(query)
+
     //you can also specify just the fields you are interested in, like:
     //SELECT asin, category, img, title, price FROM "Books" 
-    const response = await db.query('SELECT * FROM "Books"')
+    const response = await db.query(query, params)
     res.send(response.rows)
 })
 
