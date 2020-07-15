@@ -75,6 +75,16 @@ router.get("/", async(req, res)=>{
     res.send(response.rows)
 })
 
+router.get("/search/:query", async(req, res) => {
+    const response = await db.query(`SELECT * FROM "Books" WHERE 
+                                    title ILIKE '${"%" + req.params.query + "%"}' OR
+                                    category ILIKE '${"%" + req.params.query + "%"}'
+                                    LIMIT $1 OFFSET $2 
+                                    `, [ req.query.limit || 10, req.query.offset || 0])
+
+    res.send(response.rows)
+})
+
 router.get("/:asin", async (req, res)=>{
     const response = await db.query('SELECT asin, category, img, title, price FROM "Books" WHERE ASIN = $1', 
                                                                                         [ req.params.asin ])
